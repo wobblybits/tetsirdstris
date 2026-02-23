@@ -1,6 +1,6 @@
 # tetsirdstris
 
-Use both of your eyes together!
+Use your eyes! Both of them! At the same time!
 
 ## About RCade
 
@@ -11,13 +11,13 @@ This game is built for [RCade](https://rcade.recurse.com), a custom arcade cabin
 Install dependencies:
 
 ```bash
-pnpm install
+npm install
 ```
 
 Start the development server:
 
 ```bash
-pnpm dev
+npm run dev
 ```
 
 This launches Vite on port 5173 and connects to the RCade cabinet emulator.
@@ -25,7 +25,7 @@ This launches Vite on port 5173 and connects to the RCade cabinet emulator.
 ## Building
 
 ```bash
-pnpm build
+npm run build
 ```
 
 Output goes to `dist/` and is ready for deployment.
@@ -140,7 +140,7 @@ When developing locally, keyboard inputs are mapped to arcade controls:
 
 Spinners repeat at ~60Hz while held.
 
-To add spinner support: `pnpm add @rcade/plugin-input-spinners`
+To add spinner support: `npm install @rcade/plugin-input-spinners`
 
 ## RCade Screen Size
 

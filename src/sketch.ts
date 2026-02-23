@@ -14,7 +14,6 @@ import {
   mergePiece,
   clearLines,
   emptyGrid,
-  getShapeCells,
 } from "./tetris";
 import { depthToSirds } from "./sirds";
 
@@ -50,9 +49,6 @@ const FLOOR_Y = HEIGHT - CELL_H;
 const BOARD_Y = FLOOR_Y - BOARD_PIX_H;
 const LEFT_PANEL_W = BOARD_X;
 const RIGHT_PANEL_W = WIDTH - BOARD_X - BOARD_PIX_W;
-// For drawNextPreview (unused; kept for future)
-const PANEL_X = BOARD_X + BOARD_PIX_W + 10;
-const PANEL_Y = BOARD_Y;
 
 // Side panel colors (NES-style navy with decorative tiles)
 const PANEL_COLOR_A: [number, number, number] = [25, 25, 55];
@@ -238,41 +234,26 @@ const sketch = (p: p5) => {
     }
   }
 
-  // Not used
-  function drawNextPreview(
-    g: p5.Graphics | p5,
-    type: number,
-    value: number,
-  ): void {
-    const shape = getShapeCells(type, 0);
-    const cell = 8;
-    const ox = PANEL_X + 20;
-    const oy = PANEL_Y + 70;
-    g.fill(value);
-    g.noStroke();
-    for (const [r, c] of shape) {
-      g.rect(ox + c * (cell + 2), oy + r * (cell + 2), cell, cell);
-    }
-  }
-
   /** Build depth map (0 = far, 255 = near) into depthBuffer. */
   function buildDepthMap(): void {
     const g = depthGraphics;
-    g.background(255); // full white frame (near) - panels/background uniform depth = random SIRDS
+    const DEPTH_BG = Math.round(0.25 * 255);   // background (board well)
+    const DEPTH_PIECE = Math.round(0.5 * 255); // pieces
+    const DEPTH_PANEL = Math.round(0.75 * 255); // sidebars
+    g.background(DEPTH_PANEL); // sidebars
 
-    // Board well: black (far) background, white blocks
-    g.fill(0);
+    // Board well: background depth
+    g.fill(DEPTH_BG);
     g.noStroke();
     g.rect(BOARD_X, BOARD_Y, BOARD_PIX_W, BOARD_PIX_H);
 
-    // Board filled cells and current piece (white, near)
+    // Board filled cells and current piece
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
-        if (grid[row][col]) drawCell(g, col, row, 255);
+        if (grid[row][col]) drawCell(g, col, row, DEPTH_PIECE);
       }
     }
-    // Current piece (white, near)
-    if (currentPiece) drawPieceCells(g, currentPiece, 255);
+    if (currentPiece) drawPieceCells(g, currentPiece, DEPTH_PIECE);
 
     g.loadPixels();
     const pix = g.pixels;
