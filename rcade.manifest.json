@@ -1,0 +1,18 @@
+{
+  "$schema": "https://rcade.dev/manifest.schema.json",
+  "name": "tetsirdstris",
+  "display_name": "tetsirdstris",
+  "description": "Use your both of your eyes together!",
+  "visibility": "public",
+  "authors": [
+    {
+      "display_name": "David Feil"
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "@rcade/input-classic",
+      "version": "1.0.0"
+    }
+  ]
+}
