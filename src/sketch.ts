@@ -107,8 +107,6 @@ const sketch = (p: p5) => {
     const type = nextPieceType;
     nextPieceType = Math.floor(Math.random() * 7);
     const piece = createPiece(type);
-    piece.x = 3;
-    piece.y = 0;
     if (collides(grid, piece)) {
       gameOver = true;
       return false;

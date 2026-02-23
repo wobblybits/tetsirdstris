@@ -1,5 +1,6 @@
 /**
  * Minimalist Tetris: 10×20 grid, 7 tetrominoes, level, score, next piece.
+ * NRS (Nintendo Rotation System) with correct pivots per piece type.
  *
  * @format
  */
@@ -7,80 +8,73 @@
 export const COLS = 10;
 export const ROWS = 14;
 
-// Tetromino shapes in 4×4 local grid (row, col). Rotation 0 = spawn orientation.
-// I, O, T, S, Z, J, L
-export const SHAPES: [number, number][][] = [
-  [
-    [1, 0],
-    [1, 1],
-    [1, 2],
-    [1, 3],
-  ], // I
-  [
-    [0, 1],
-    [0, 2],
-    [1, 1],
-    [1, 2],
-  ], // O
-  [
-    [0, 1],
-    [1, 0],
-    [1, 1],
-    [1, 2],
-  ], // T
-  [
-    [0, 1],
-    [0, 2],
-    [1, 0],
-    [1, 1],
-  ], // S
-  [
-    [0, 0],
-    [0, 1],
-    [1, 1],
-    [1, 2],
-  ], // Z
-  [
-    [0, 0],
-    [1, 0],
-    [1, 1],
-    [1, 2],
-  ], // J
-  [
-    [0, 2],
-    [1, 0],
-    [1, 1],
-    [1, 2],
-  ], // L
+// NRS tile offsets from meta_nestris. Each (col, row) is relative to the pivot.
+// Order: T(0-3), J(4-7), Z(8-9), O(10), S(11-12), L(13-16), I(17-18)
+const NRS_OFFSETS: [number, number][][] = [
+  [ [-1, 0], [0, 0], [1, 0], [0, -1] ],   // TUp
+  [ [0, -1], [0, 0], [1, 0], [0, 1] ],    // TRight
+  [ [-1, 0], [0, 0], [1, 0], [0, 1] ],    // TDown
+  [ [0, -1], [-1, 0], [0, 0], [0, 1] ],   // TLeft
+  [ [0, -1], [0, 0], [-1, 1], [0, 1] ],   // JUp
+  [ [-1, -1], [-1, 0], [0, 0], [1, 0] ],  // JRight
+  [ [0, -1], [1, -1], [0, 0], [0, 1] ],   // JDown
+  [ [-1, 0], [0, 0], [1, 0], [1, 1] ],    // JLeft
+  [ [-1, 0], [0, 0], [0, 1], [1, 1] ],    // ZHorizontal
+  [ [1, -1], [0, 0], [1, 0], [0, 1] ],    // ZVertical
+  [ [-1, 0], [0, 0], [-1, 1], [0, 1] ],   // O
+  [ [0, 0], [1, 0], [-1, 1], [0, 1] ],    // SHorizontal
+  [ [0, -1], [0, 0], [1, 0], [1, 1] ],    // SVertical
+  [ [0, -1], [0, 0], [0, 1], [1, 1] ],    // LUp
+  [ [-1, -1], [0, -1], [0, 0], [0, 1] ],  // LRight
+  [ [0, -1], [-1, 0], [0, 0], [1, 0] ],   // LDown
+  [ [-1, 0], [0, 0], [1, 0], [-1, 1] ],   // LLeft
+  [ [0, -2], [0, -1], [0, 0], [0, 1] ],   // IVertical
+  [ [-2, 0], [-1, 0], [0, 0], [1, 0] ],   // IHorizontal
+];
+
+// type 0=I, 1=O, 2=T, 3=S, 4=Z, 5=J, 6=L -> NRS index for (type, rotation)
+function nrsIndex(type: number, rotation: number): number {
+  switch (type) {
+    case 0: return rotation === 0 ? 17 : 18;  // I: IVertical, IHorizontal
+    case 1: return 10;                       // O
+    case 2: return rotation;                 // T: 0..3
+    case 3: return rotation === 0 ? 11 : 12; // S
+    case 4: return rotation === 0 ? 8 : 9;   // Z
+    case 5: return 4 + rotation;             // J: 4..7
+    case 6: return 13 + rotation;            // L: 13..16
+    default: return 0;
+  }
+}
+
+// Spawn pivot (x, y) per piece type so top cell is at row 0
+const SPAWN_PIVOT: [number, number][] = [
+  [4, 2],  // I vertical
+  [4, 0],  // O
+  [4, 1],  // T
+  [4, 0],  // S
+  [4, 0],  // Z
+  [4, 1],  // J
+  [4, 1],  // L
 ];
 
 export type Piece = {
   type: number; // 0..6
   rotation: number;
-  x: number;
-  y: number;
+  x: number;  // pivot col
+  y: number;  // pivot row
 };
 
 export function getShapeCells(
   type: number,
   rotation: number,
 ): [number, number][] {
-  const shape = SHAPES[type];
-  const out: [number, number][] = [];
-  for (const [r, c] of shape) {
-    // 90° CW: (r,c) -> (c, 3-r)
-    let rr = r,
-      cc = c;
-    for (let i = 0; i < rotation; i++) {
-      [rr, cc] = [cc, 3 - rr];
-    }
-    out.push([rr, cc]);
-  }
-  return out;
+  const offsets = NRS_OFFSETS[nrsIndex(type, rotation)];
+  return offsets.map(([dc, dr]) => [dr, dc]); // (col, row) -> (row, col)
 }
 
 export function createPiece(type: number): Piece {
-  return { type, rotation: 0, x: 3, y: 0 };
+  const [x, y] = SPAWN_PIVOT[type];
+  return { type, rotation: 0, x, y };
 }
 
 export function clonePiece(p: Piece): Piece {
