@@ -4,7 +4,7 @@
  * - obsDist = xdpi * 12 (12" viewing distance at 75 dpi)
  * - eyeSep = xdpi * 2.5 (2.5" between eyes)
  * Scaled for 336px width (vs reference 640px): factor 336/640 ≈ 0.525
- *
+ * https://people.ece.cornell.edu/land/courses/ece5760/FinalProjects/f2007/awh24_mdj23/awh24_mdj23/index.html
  * @format
  */
 
