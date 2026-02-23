@@ -87,8 +87,11 @@ export function clonePiece(p: Piece): Piece {
   return { type: p.type, rotation: p.rotation, x: p.x, y: p.y };
 }
 
+/** NRS (Nintendo Rotation System): O has no rotation, I has 2, others have 4. */
 export function rotatePiece(p: Piece): Piece {
-  return { ...p, rotation: (p.rotation + 1) % 4 };
+  if (p.type === 1) return { ...p }; // O: no rotation
+  if (p.type === 0) return { ...p, rotation: (p.rotation + 1) % 2 }; // I: 2 states
+  return { ...p, rotation: (p.rotation + 1) % 4 }; // J, L, T, S, Z: 4 states
 }
 
 export function pieceCells(p: Piece): [number, number][] {

@@ -84,9 +84,10 @@ const sketch = (p: p5) => {
   let canvasCtx: CanvasRenderingContext2D | null = null;
   let depthGraphics: p5.Graphics;
   // SIRDS params (2P controls)
-  let sirdsInverted = false;
-  let eyeSep = 82;
-  let obsDist = 520;
+  let sirdsInverted = true;
+  let tintAndOutlineEnabled = false;
+  let eyeSep = 80;
+  let obsDist = 260;
   let prev2A = false;
   let prev2B = false;
   // NES-style DAS/ARR state
@@ -237,7 +238,7 @@ const sketch = (p: p5) => {
   /** Build depth map (0 = far, 255 = near) into depthBuffer. */
   function buildDepthMap(): void {
     const g = depthGraphics;
-    const DEPTH_BG = Math.round(0.25 * 255);   // background (board well)
+    const DEPTH_BG = Math.round(0.25 * 255); // background (board well)
     const DEPTH_PIECE = Math.round(0.5 * 255); // pieces
     const DEPTH_PANEL = Math.round(0.75 * 255); // sidebars
     g.background(DEPTH_PANEL); // sidebars
@@ -370,9 +371,19 @@ const sketch = (p: p5) => {
     // Update SIRDS buffer only on tick (new seed each tick = fresh random pattern)
     if (USE_SIRDS) {
       buildDepthMap();
-      depthToSirds(depthBuffer, WIDTH, HEIGHT, sirdsOutput, tickCount, eyeSep, obsDist);
-      tintLockedPieces(sirdsOutput);
-      tintPanels(sirdsOutput);
+      depthToSirds(
+        depthBuffer,
+        WIDTH,
+        HEIGHT,
+        sirdsOutput,
+        tickCount,
+        eyeSep,
+        obsDist,
+      );
+      if (tintAndOutlineEnabled) {
+        tintLockedPieces(sirdsOutput);
+        tintPanels(sirdsOutput);
+      }
       tickCount++;
     }
   }
@@ -392,10 +403,11 @@ const sketch = (p: p5) => {
         const cellLeft = BOARD_X + col * CELL_W;
         const cellTop = BOARD_Y + row * CELL_H;
         const isBorder =
-          px === cellLeft ||
-          px === cellLeft + CELL_W - 1 ||
-          py === cellTop ||
-          py === cellTop + CELL_H - 1;
+          tintAndOutlineEnabled &&
+          (px === cellLeft ||
+            px === cellLeft + CELL_W - 1 ||
+            py === cellTop ||
+            py === cellTop + CELL_H - 1);
         const mult = isBorder ? 0.45 : 1;
         const i = (py * WIDTH + px) << 2;
         const gray = data[i];
@@ -438,15 +450,27 @@ const sketch = (p: p5) => {
   }
 
   p.draw = () => {
-    // 2P: SIRDS tuning (buttons = inversion, stick H = eye sep, stick V = obs dist)
+    // 2P: SIRDS tuning (A = inversion, B = tint/outline, stick H = eye sep, stick V = obs dist)
     if (PLAYER_2.A && !prev2A) sirdsInverted = !sirdsInverted;
     prev2A = !!PLAYER_2.A;
-    if (PLAYER_2.B && !prev2B) sirdsInverted = !sirdsInverted;
+    if (PLAYER_2.B && !prev2B) tintAndOutlineEnabled = !tintAndOutlineEnabled;
     prev2B = !!PLAYER_2.B;
-    if (PLAYER_2.DPAD.left) eyeSep = Math.max(30, eyeSep - 2);
-    if (PLAYER_2.DPAD.right) eyeSep = Math.min(150, eyeSep + 2);
-    if (PLAYER_2.DPAD.up) obsDist = Math.min(800, obsDist + 10);
-    if (PLAYER_2.DPAD.down) obsDist = Math.max(200, obsDist - 10);
+    if (PLAYER_2.DPAD.left) {
+      eyeSep = Math.max(30, eyeSep - 2);
+      console.log("eyeSep:", eyeSep, "obsDist:", obsDist);
+    }
+    if (PLAYER_2.DPAD.right) {
+      eyeSep = Math.min(150, eyeSep + 2);
+      console.log("eyeSep:", eyeSep, "obsDist:", obsDist);
+    }
+    if (PLAYER_2.DPAD.up) {
+      obsDist = Math.min(800, obsDist + 10);
+      console.log("eyeSep:", eyeSep, "obsDist:", obsDist);
+    }
+    if (PLAYER_2.DPAD.down) {
+      obsDist = Math.max(200, obsDist - 10);
+      console.log("eyeSep:", eyeSep, "obsDist:", obsDist);
+    }
 
     if (!gameStarted) {
       p.background(0);
@@ -499,25 +523,26 @@ const sketch = (p: p5) => {
     if (USE_SIRDS) {
       if (canvasCtx) {
         canvasCtx.putImageData(sirdsOutput, 0, 0);
-        // Red focus dots for eye training
-        const cx = WIDTH / 2;
-        canvasCtx.fillStyle = "#e53935";
-        canvasCtx.beginPath();
-        canvasCtx.arc(
-          cx - FOCUS_DOT_SPACING / 2,
-          FOCUS_DOT_Y,
-          FOCUS_DOT_R,
-          0,
-          Math.PI * 2,
-        );
-        canvasCtx.arc(
-          cx + FOCUS_DOT_SPACING / 2,
-          FOCUS_DOT_Y,
-          FOCUS_DOT_R,
-          0,
-          Math.PI * 2,
-        );
-        canvasCtx.fill();
+        if (tintAndOutlineEnabled) {
+          const cx = WIDTH / 2;
+          canvasCtx.fillStyle = "#e53935";
+          canvasCtx.beginPath();
+          canvasCtx.arc(
+            cx - FOCUS_DOT_SPACING / 2,
+            FOCUS_DOT_Y,
+            FOCUS_DOT_R,
+            0,
+            Math.PI * 2,
+          );
+          canvasCtx.arc(
+            cx + FOCUS_DOT_SPACING / 2,
+            FOCUS_DOT_Y,
+            FOCUS_DOT_R,
+            0,
+            Math.PI * 2,
+          );
+          canvasCtx.fill();
+        }
       }
     } else {
       drawGameNormal(p);
@@ -536,11 +561,12 @@ const sketch = (p: p5) => {
     p.fill(28, 28, 44);
     p.noStroke();
     p.rect(BOARD_X, BOARD_Y, BOARD_PIX_W, BOARD_PIX_H);
-    // Locked cells (piece colors with outlines)
+    // Locked cells (piece colors with outlines when enabled)
     for (let row = 0; row < ROWS; row++) {
       for (let col = 0; col < COLS; col++) {
         const cell = grid[row][col];
-        if (cell) drawCell(p, col, row, PIECE_COLORS[cell - 1], true);
+        if (cell)
+          drawCell(p, col, row, PIECE_COLORS[cell - 1], tintAndOutlineEnabled);
       }
     }
     // Current piece (white)

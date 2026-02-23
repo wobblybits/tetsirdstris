@@ -4,9 +4,12 @@
  * - obsDist = xdpi * 12 (12" viewing distance at 75 dpi)
  * - eyeSep = xdpi * 2.5 (2.5" between eyes)
  * Scaled for 336px width (vs reference 640px): factor 336/640 ≈ 0.525
+ *
+ * @format
  */
-const DEFAULT_EYESEP = 82;
-const DEFAULT_OBSDIST = 520;
+
+const DEFAULT_EYESEP = 100;
+const DEFAULT_OBSDIST = 600;
 const BKDEPTH = 0;
 
 /** Compute separation in pixels. sep = (eyesep * featureZ) / (featureZ + obsdist) */
@@ -48,7 +51,7 @@ export function depthToSirds(
   out: ImageData,
   seed: number,
   eyeSep = DEFAULT_EYESEP,
-  obsDist = DEFAULT_OBSDIST
+  obsDist = DEFAULT_OBSDIST,
 ): void {
   const data = out.data;
   const link = new Int32Array(width);
